@@ -154,13 +154,13 @@ function TreeVisual({ vitality }) {
 }
 
 // ============ Day row — responsive layout ============
-function DayRow({ day, count, onDelta, onSet }) {
+function DayRow({ day, count, onDelta, onSet, isMobile }) {
   const isActive = count > 0;
 
   return (
     <div
       style={{
-        padding: "10px 12px",
+        padding: isMobile ? "8px 8px" : "10px 12px",
         background: isActive ? "#F0EBDC" : "transparent",
         borderRadius: 6,
         transition: "background 200ms ease",
@@ -206,7 +206,7 @@ function DayRow({ day, count, onDelta, onSet }) {
       <div
         style={{
           display: "flex",
-          gap: 6,
+          gap: isMobile ? 4 : 6,
           alignItems: "stretch",
         }}
       >
@@ -214,7 +214,7 @@ function DayRow({ day, count, onDelta, onSet }) {
           onClick={() => onDelta(-10)}
           ariaLabel={`Decrease ${day.full} by 10`}
           variant="secondary"
-          style={{ flex: "0 0 auto", minWidth: 48, fontSize: 13 }}
+          style={{ flex: "0 0 auto", minWidth: isMobile ? 40 : 48, fontSize: 13 }}
         >
           −10
         </TapButton>
@@ -222,7 +222,7 @@ function DayRow({ day, count, onDelta, onSet }) {
           onClick={() => onDelta(-1)}
           ariaLabel={`Decrease ${day.full} by 1`}
           variant="secondary"
-          style={{ flex: "0 0 auto", minWidth: 44, fontSize: 20, fontWeight: 700 }}
+          style={{ flex: "0 0 auto", minWidth: isMobile ? 36 : 44, fontSize: 20, fontWeight: 700 }}
         >
           −
         </TapButton>
@@ -255,7 +255,7 @@ function DayRow({ day, count, onDelta, onSet }) {
           onClick={() => onDelta(1)}
           ariaLabel={`Increase ${day.full} by 1`}
           variant="primary"
-          style={{ flex: "0 0 auto", minWidth: 44, fontSize: 22, fontWeight: 700 }}
+          style={{ flex: "0 0 auto", minWidth: isMobile ? 36 : 44, fontSize: 22, fontWeight: 700 }}
         >
           +
         </TapButton>
@@ -263,7 +263,7 @@ function DayRow({ day, count, onDelta, onSet }) {
           onClick={() => onDelta(10)}
           ariaLabel={`Increase ${day.full} by 10`}
           variant="primary"
-          style={{ flex: "0 0 auto", minWidth: 48, fontSize: 13 }}
+          style={{ flex: "0 0 auto", minWidth: isMobile ? 40 : 48, fontSize: 13 }}
         >
           +10
         </TapButton>
@@ -359,6 +359,7 @@ export default function PrintTracker() {
         fontFamily: "Georgia, 'Times New Roman', serif",
         color: INK,
         padding: isMobile ? "20px 12px" : "32px 16px",
+        overflowX: "hidden",
       }}
     >
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -516,6 +517,7 @@ export default function PrintTracker() {
                 count={counts[day.key]}
                 onDelta={(delta) => updateDay(day.key, delta)}
                 onSet={(value) => setDay(day.key, value)}
+                isMobile={isMobile}
               />
             ))}
           </div>
