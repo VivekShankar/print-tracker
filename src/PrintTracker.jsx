@@ -26,6 +26,83 @@ const DAYS = [
 
 const STORAGE_KEY = "print-tracker:current-week";
 
+// ============ Hook: track viewport width ============
+function useIsMobile(breakpoint = 600) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < breakpoint;
+  });
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+// ============ Press-feedback button ============
+// Renders a button that visibly responds to taps (scale + brightness change)
+// even on mobile where :hover doesn't fire.
+function TapButton({ children, onClick, ariaLabel, variant = "primary", style = {} }) {
+  const [pressed, setPressed] = useState(false);
+
+  const baseStyle = {
+    minHeight: 44, // iOS / Material guideline
+    minWidth: 44,
+    border: 0,
+    borderRadius: 6,
+    cursor: "pointer",
+    fontFamily: "Calibri, Helvetica, sans-serif",
+    fontWeight: 700,
+    fontSize: 16,
+    transition: "transform 80ms ease-out, background 120ms, box-shadow 120ms",
+    transform: pressed ? "scale(0.94)" : "scale(1)",
+    userSelect: "none",
+    WebkitTapHighlightColor: "transparent",
+    touchAction: "manipulation",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const variants = {
+    primary: {
+      background: pressed ? "#3F5A2A" : MOSS,
+      color: CREAM,
+      boxShadow: pressed ? "inset 0 2px 4px rgba(0,0,0,0.2)" : "none",
+    },
+    secondary: {
+      background: pressed ? "#E8DEC8" : "white",
+      color: FOREST,
+      border: `1px solid ${SAGE}`,
+      boxShadow: pressed ? "inset 0 2px 4px rgba(0,0,0,0.1)" : "none",
+    },
+    accent: {
+      background: pressed ? "#A53A26" : ACCENT,
+      color: CREAM,
+    },
+    ghost: {
+      background: pressed ? "rgba(0,0,0,0.05)" : "transparent",
+      color: MUTE,
+      border: `1px solid ${MUTE}`,
+    },
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      aria-label={ariaLabel}
+      style={{ ...baseStyle, ...variants[variant], ...style }}
+    >
+      {children}
+    </button>
+  );
+}
+
 // ============ Tree visualization ============
 function TreeVisual({ vitality }) {
   const v = Math.max(0, Math.min(1, vitality));
@@ -35,61 +112,17 @@ function TreeVisual({ vitality }) {
   const stumpOpacity = 1 - Math.min(1, v / 0.3);
 
   return (
-    <svg viewBox="0 0 300 320" style={{ width: "100%", height: "auto" }}>
-      <line
-        x1="20"
-        y1="290"
-        x2="280"
-        y2="290"
-        stroke="#8B9A7B"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+    <svg viewBox="0 0 300 320" style={{ width: "100%", height: "auto", display: "block" }}>
+      <line x1="20" y1="290" x2="280" y2="290" stroke="#8B9A7B" strokeWidth="1.5" strokeLinecap="round" />
       <g opacity={stumpOpacity}>
-        <path
-          d="M 130 290 Q 128 270 132 255 L 168 255 Q 172 270 170 290 Z"
-          fill="#5C3A1F"
-        />
-        <ellipse
-          cx="150"
-          cy="255"
-          rx="22"
-          ry="6"
-          fill="#7A5238"
-          stroke="#3D2817"
-          strokeWidth="1"
-        />
-        <ellipse
-          cx="150"
-          cy="255"
-          rx="16"
-          ry="4"
-          fill="none"
-          stroke="#3D2817"
-          strokeWidth="0.8"
-          opacity="0.7"
-        />
-        <ellipse
-          cx="150"
-          cy="255"
-          rx="9"
-          ry="2"
-          fill="none"
-          stroke="#3D2817"
-          strokeWidth="0.8"
-          opacity="0.7"
-        />
+        <path d="M 130 290 Q 128 270 132 255 L 168 255 Q 172 270 170 290 Z" fill="#5C3A1F" />
+        <ellipse cx="150" cy="255" rx="22" ry="6" fill="#7A5238" stroke="#3D2817" strokeWidth="1" />
+        <ellipse cx="150" cy="255" rx="16" ry="4" fill="none" stroke="#3D2817" strokeWidth="0.8" opacity="0.7" />
+        <ellipse cx="150" cy="255" rx="9" ry="2" fill="none" stroke="#3D2817" strokeWidth="0.8" opacity="0.7" />
       </g>
       <g opacity={trunkOpacity}>
-        <path
-          d="M 132 290 Q 128 220 134 150 Q 138 110 142 90 L 158 90 Q 162 110 166 150 Q 172 220 168 290 Z"
-          fill="#5C3A1F"
-        />
-        <path
-          d="M 132 290 Q 128 220 134 150 Q 138 110 142 90 L 150 90 Q 146 110 142 150 Q 138 220 142 290 Z"
-          fill="#3D2817"
-          opacity="0.4"
-        />
+        <path d="M 132 290 Q 128 220 134 150 Q 138 110 142 90 L 158 90 Q 162 110 166 150 Q 172 220 168 290 Z" fill="#5C3A1F" />
+        <path d="M 132 290 Q 128 220 134 150 Q 138 110 142 90 L 150 90 Q 146 110 142 150 Q 138 220 142 290 Z" fill="#3D2817" opacity="0.4" />
       </g>
       <g opacity={leafOpacity}>
         <ellipse cx="150" cy="80" rx="80" ry="60" fill="#7A9B5A" opacity="0.8" />
@@ -108,20 +141,10 @@ function TreeVisual({ vitality }) {
         ].map(([cx, cy], i) => (
           <g key={i}>
             <circle cx={cx} cy={cy} r="6" fill={ACCENT} />
-            <ellipse
-              cx={cx - 1.5}
-              cy={cy - 1.5}
-              rx="1.8"
-              ry="1.3"
-              fill="#E87A5E"
-              opacity="0.8"
-            />
+            <ellipse cx={cx - 1.5} cy={cy - 1.5} rx="1.8" ry="1.3" fill="#E87A5E" opacity="0.8" />
             <path
               d={`M ${cx + 0.5} ${cy - 5.5} Q ${cx + 1.5} ${cy - 8} ${cx + 3} ${cy - 7.5}`}
-              stroke="#3D2817"
-              strokeWidth="0.8"
-              fill="none"
-              strokeLinecap="round"
+              stroke="#3D2817" strokeWidth="0.8" fill="none" strokeLinecap="round"
             />
           </g>
         ))}
@@ -130,39 +153,157 @@ function TreeVisual({ vitality }) {
   );
 }
 
+// ============ Day row — responsive layout ============
+function DayRow({ day, count, onDelta, onSet }) {
+  const isActive = count > 0;
+
+  return (
+    <div
+      style={{
+        padding: "10px 12px",
+        background: isActive ? "#F0EBDC" : "transparent",
+        borderRadius: 6,
+        transition: "background 200ms ease",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      {/* Top line: day name + summary */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "Calibri, Helvetica, sans-serif",
+            fontSize: 14,
+            fontWeight: 700,
+            color: FOREST,
+            letterSpacing: 1,
+            textTransform: "uppercase",
+          }}
+        >
+          {day.label}
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: isActive ? ACCENT : MUTE,
+            fontFamily: "Calibri, Helvetica, sans-serif",
+            fontStyle: isActive ? "normal" : "italic",
+            fontWeight: isActive ? 700 : 400,
+          }}
+        >
+          {isActive ? `${count} pages` : "no prints yet"}
+        </div>
+      </div>
+
+      {/* Controls row: full-width flex */}
+      <div
+        style={{
+          display: "flex",
+          gap: 6,
+          alignItems: "stretch",
+        }}
+      >
+        <TapButton
+          onClick={() => onDelta(-10)}
+          ariaLabel={`Decrease ${day.full} by 10`}
+          variant="secondary"
+          style={{ flex: "0 0 auto", minWidth: 48, fontSize: 13 }}
+        >
+          −10
+        </TapButton>
+        <TapButton
+          onClick={() => onDelta(-1)}
+          ariaLabel={`Decrease ${day.full} by 1`}
+          variant="secondary"
+          style={{ flex: "0 0 auto", minWidth: 44, fontSize: 20, fontWeight: 700 }}
+        >
+          −
+        </TapButton>
+        <input
+          type="number"
+          inputMode="numeric"
+          min="0"
+          value={count}
+          onChange={(e) => onSet(e.target.value)}
+          onFocus={(e) => e.target.select()}
+          aria-label={`${day.full} page count`}
+          style={{
+            flex: "1 1 auto",
+            minWidth: 0,
+            minHeight: 44,
+            textAlign: "center",
+            border: `1px solid ${SAGE}`,
+            borderRadius: 6,
+            fontFamily: "Georgia, serif",
+            fontSize: 18,
+            fontWeight: 700,
+            color: isActive ? ACCENT : INK,
+            background: "white",
+            padding: "0 4px",
+            WebkitAppearance: "none",
+            MozAppearance: "textfield",
+          }}
+        />
+        <TapButton
+          onClick={() => onDelta(1)}
+          ariaLabel={`Increase ${day.full} by 1`}
+          variant="primary"
+          style={{ flex: "0 0 auto", minWidth: 44, fontSize: 22, fontWeight: 700 }}
+        >
+          +
+        </TapButton>
+        <TapButton
+          onClick={() => onDelta(10)}
+          ariaLabel={`Increase ${day.full} by 10`}
+          variant="primary"
+          style={{ flex: "0 0 auto", minWidth: 48, fontSize: 13 }}
+        >
+          +10
+        </TapButton>
+      </div>
+    </div>
+  );
+}
+
 // ============ Main component ============
 export default function PrintTracker() {
+  const isMobile = useIsMobile(640);
+
   const [counts, setCounts] = useState({
     mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0,
   });
   const [hasLoaded, setHasLoaded] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // Load from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Validate shape before using
         if (parsed && typeof parsed === "object") {
           setCounts((prev) => ({ ...prev, ...parsed }));
         }
       }
     } catch (e) {
-      // Storage unavailable or parse error — start fresh
+      // start fresh
     } finally {
       setHasLoaded(true);
     }
   }, []);
 
-  // Persist on change (after initial load)
   useEffect(() => {
     if (!hasLoaded) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(counts));
     } catch (e) {
-      // Quota exceeded or storage disabled — fail silently
+      // fail silently
     }
   }, [counts, hasLoaded]);
 
@@ -217,11 +358,11 @@ export default function PrintTracker() {
         background: CREAM,
         fontFamily: "Georgia, 'Times New Roman', serif",
         color: INK,
-        padding: "32px 16px",
+        padding: isMobile ? "20px 12px" : "32px 16px",
       }}
     >
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        <header style={{ marginBottom: 32 }}>
+        <header style={{ marginBottom: isMobile ? 24 : 32 }}>
           <div
             style={{
               fontSize: 11,
@@ -236,11 +377,11 @@ export default function PrintTracker() {
           </div>
           <h1
             style={{
-              fontSize: 40,
+              fontSize: isMobile ? 28 : 40,
               fontWeight: 700,
               color: FOREST,
               margin: 0,
-              lineHeight: 1.1,
+              lineHeight: 1.15,
               letterSpacing: -0.5,
             }}
           >
@@ -248,10 +389,11 @@ export default function PrintTracker() {
           </h1>
           <p
             style={{
-              fontSize: 15,
+              fontSize: isMobile ? 14 : 15,
               color: MUTE,
               fontStyle: "italic",
               marginTop: 12,
+              marginBottom: 0,
               fontFamily: "Calibri, Helvetica, sans-serif",
             }}
           >
@@ -264,15 +406,15 @@ export default function PrintTracker() {
             background: WARM,
             border: `1px solid ${SAGE}`,
             borderLeft: `4px solid ${weekTotal === 0 ? MOSS : ACCENT}`,
-            padding: "28px 24px",
-            marginBottom: 24,
+            padding: isMobile ? "20px 18px" : "28px 24px",
+            marginBottom: isMobile ? 16 : 24,
             display: "grid",
-            gridTemplateColumns: "1fr 180px",
-            gap: 24,
+            gridTemplateColumns: isMobile ? "1fr" : "1fr 180px",
+            gap: isMobile ? 16 : 24,
             alignItems: "center",
           }}
         >
-          <div>
+          <div style={{ order: isMobile ? 2 : 1 }}>
             <div
               style={{
                 fontSize: 11,
@@ -287,7 +429,7 @@ export default function PrintTracker() {
             </div>
             <div
               style={{
-                fontSize: 22,
+                fontSize: isMobile ? 20 : 22,
                 fontWeight: 700,
                 color: FOREST,
                 fontStyle: "italic",
@@ -310,7 +452,14 @@ export default function PrintTracker() {
                 : `Each tree produces about ${SHEETS_PER_TREE.toLocaleString()} sheets of copy paper. At your current pace, you're personally responsible for ${projectedTrees.toFixed(2)} ${projectedTrees === 1 ? "tree" : "trees"} every academic year.`}
             </div>
           </div>
-          <div style={{ width: 180 }}>
+          <div
+            style={{
+              width: isMobile ? "60%" : 180,
+              maxWidth: 220,
+              margin: isMobile ? "0 auto" : 0,
+              order: isMobile ? 1 : 2,
+            }}
+          >
             <TreeVisual vitality={vitality} />
           </div>
         </section>
@@ -319,8 +468,9 @@ export default function PrintTracker() {
           style={{
             background: "white",
             border: `1px solid ${SAGE}`,
-            padding: "24px 24px 20px",
-            marginBottom: 24,
+            padding: isMobile ? "18px 14px 16px" : "24px 24px 20px",
+            marginBottom: isMobile ? 16 : 24,
+            borderRadius: 4,
           }}
         >
           <div
@@ -328,17 +478,19 @@ export default function PrintTracker() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "baseline",
-              marginBottom: 16,
+              marginBottom: 14,
+              flexWrap: "wrap",
+              gap: 6,
             }}
           >
             <h2
               style={{
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: 700,
                 color: FOREST,
                 margin: 0,
                 fontFamily: "Calibri, Helvetica, sans-serif",
-                letterSpacing: 1,
+                letterSpacing: 1.5,
                 textTransform: "uppercase",
               }}
             >
@@ -346,7 +498,7 @@ export default function PrintTracker() {
             </h2>
             <div
               style={{
-                fontSize: 12,
+                fontSize: 11,
                 color: MUTE,
                 fontStyle: "italic",
                 fontFamily: "Calibri, Helvetica, sans-serif",
@@ -356,144 +508,22 @@ export default function PrintTracker() {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {DAYS.map((day) => (
-              <div
+              <DayRow
                 key={day.key}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "60px 1fr auto",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "10px 12px",
-                  background: counts[day.key] > 0 ? "#F0EBDC" : "transparent",
-                  borderRadius: 4,
-                  transition: "background 200ms ease",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "Calibri, Helvetica, sans-serif",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: FOREST,
-                    letterSpacing: 1,
-                  }}
-                >
-                  {day.label}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <button
-                    onClick={() => updateDay(day.key, -10)}
-                    aria-label={`Decrease ${day.full} by 10`}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      border: `1px solid ${SAGE}`,
-                      background: "white",
-                      color: FOREST,
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontFamily: "Calibri, Helvetica, sans-serif",
-                      fontSize: 13,
-                      fontWeight: 700,
-                    }}
-                  >
-                    −10
-                  </button>
-                  <button
-                    onClick={() => updateDay(day.key, -1)}
-                    aria-label={`Decrease ${day.full} by 1`}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      border: `1px solid ${SAGE}`,
-                      background: "white",
-                      color: FOREST,
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 18,
-                      fontWeight: 700,
-                    }}
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min="0"
-                    value={counts[day.key]}
-                    onChange={(e) => setDay(day.key, e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                    style={{
-                      width: 64,
-                      height: 36,
-                      textAlign: "center",
-                      border: `1px solid ${SAGE}`,
-                      borderRadius: 4,
-                      fontFamily: "Georgia, serif",
-                      fontSize: 18,
-                      fontWeight: 700,
-                      color: counts[day.key] > 0 ? ACCENT : INK,
-                      background: "white",
-                    }}
-                  />
-                  <button
-                    onClick={() => updateDay(day.key, 1)}
-                    aria-label={`Increase ${day.full} by 1`}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      border: `1px solid ${MOSS}`,
-                      background: MOSS,
-                      color: CREAM,
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 18,
-                      fontWeight: 700,
-                    }}
-                  >
-                    +
-                  </button>
-                  <button
-                    onClick={() => updateDay(day.key, 10)}
-                    aria-label={`Increase ${day.full} by 10`}
-                    style={{
-                      width: 36,
-                      height: 36,
-                      border: `1px solid ${MOSS}`,
-                      background: MOSS,
-                      color: CREAM,
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontFamily: "Calibri, Helvetica, sans-serif",
-                      fontSize: 13,
-                      fontWeight: 700,
-                    }}
-                  >
-                    +10
-                  </button>
-                </div>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: MUTE,
-                    fontFamily: "Calibri, Helvetica, sans-serif",
-                    fontStyle: "italic",
-                    textAlign: "right",
-                    minWidth: 50,
-                  }}
-                >
-                  {counts[day.key] > 0 ? `${counts[day.key]} pp` : "—"}
-                </div>
-              </div>
+                day={day}
+                count={counts[day.key]}
+                onDelta={(delta) => updateDay(day.key, delta)}
+                onSet={(value) => setDay(day.key, value)}
+              />
             ))}
           </div>
 
           <div
             style={{
-              marginTop: 18,
-              paddingTop: 16,
+              marginTop: 16,
+              paddingTop: 14,
               borderTop: `1px solid ${SAGE}`,
               display: "flex",
               justifyContent: "space-between",
@@ -514,7 +544,7 @@ export default function PrintTracker() {
             </div>
             <div
               style={{
-                fontSize: 32,
+                fontSize: isMobile ? 28 : 32,
                 fontWeight: 700,
                 color: weekTotal > 0 ? ACCENT : FOREST,
                 fontFamily: "Georgia, serif",
@@ -539,8 +569,8 @@ export default function PrintTracker() {
           style={{
             background: FOREST,
             color: CREAM,
-            padding: "28px 24px",
-            marginBottom: 24,
+            padding: isMobile ? "20px 18px" : "28px 24px",
+            marginBottom: isMobile ? 16 : 24,
           }}
         >
           <div
@@ -558,15 +588,15 @@ export default function PrintTracker() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 24,
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+              gap: isMobile ? 18 : 24,
               alignItems: "baseline",
             }}
           >
             <div>
               <div
                 style={{
-                  fontSize: 44,
+                  fontSize: isMobile ? 36 : 44,
                   fontWeight: 700,
                   color: CREAM,
                   fontFamily: "Georgia, serif",
@@ -594,16 +624,16 @@ export default function PrintTracker() {
                   fontFamily: "Calibri, Helvetica, sans-serif",
                   fontStyle: "italic",
                   color: SAGE,
-                  opacity: 0.7,
+                  opacity: 0.75,
                 }}
               >
-                {weekTotal} pp/wk × 30 wks
+                {weekTotal} pp/wk × 30 wks/year (3 quarters × 10 weeks)
               </div>
             </div>
             <div>
               <div
                 style={{
-                  fontSize: 44,
+                  fontSize: isMobile ? 36 : 44,
                   fontWeight: 700,
                   color: ACCENT,
                   fontFamily: "Georgia, serif",
@@ -633,7 +663,7 @@ export default function PrintTracker() {
                   color: SAGE,
                   fontFamily: "Calibri, Helvetica, sans-serif",
                   fontStyle: "italic",
-                  opacity: 0.7,
+                  opacity: 0.75,
                 }}
               >
                 ÷ {SHEETS_PER_TREE.toLocaleString()} sheets/tree
@@ -648,9 +678,9 @@ export default function PrintTracker() {
             justifyContent: "space-between",
             alignItems: "center",
             paddingTop: 8,
-            paddingBottom: 32,
+            paddingBottom: 24,
             flexWrap: "wrap",
-            gap: 12,
+            gap: 14,
           }}
         >
           <div
@@ -660,63 +690,55 @@ export default function PrintTracker() {
               fontStyle: "italic",
               fontFamily: "Calibri, Helvetica, sans-serif",
               maxWidth: 380,
+              flex: "1 1 200px",
+              lineHeight: 1.5,
             }}
           >
             Sources: Conservatree (sheets/tree); academic-year math from Strategic
             Communication midterm. Data is stored locally on your device only.
           </div>
           {!showResetConfirm ? (
-            <button
+            <TapButton
               onClick={() => setShowResetConfirm(true)}
+              ariaLabel="Start a new week"
+              variant="ghost"
               style={{
-                padding: "8px 16px",
-                background: "transparent",
-                border: `1px solid ${MUTE}`,
-                color: MUTE,
-                fontFamily: "Calibri, Helvetica, sans-serif",
+                padding: "10px 16px",
                 fontSize: 12,
-                cursor: "pointer",
                 letterSpacing: 1,
                 textTransform: "uppercase",
               }}
             >
               Start a new week
-            </button>
+            </TapButton>
           ) : (
             <div style={{ display: "flex", gap: 8 }}>
-              <button
+              <TapButton
                 onClick={reset}
+                ariaLabel="Confirm reset"
+                variant="accent"
                 style={{
-                  padding: "8px 16px",
-                  background: ACCENT,
-                  border: `1px solid ${ACCENT}`,
-                  color: CREAM,
-                  fontFamily: "Calibri, Helvetica, sans-serif",
+                  padding: "10px 16px",
                   fontSize: 12,
-                  cursor: "pointer",
                   letterSpacing: 1,
                   textTransform: "uppercase",
-                  fontWeight: 700,
                 }}
               >
                 Yes, reset
-              </button>
-              <button
+              </TapButton>
+              <TapButton
                 onClick={() => setShowResetConfirm(false)}
+                ariaLabel="Cancel reset"
+                variant="ghost"
                 style={{
-                  padding: "8px 16px",
-                  background: "transparent",
-                  border: `1px solid ${MUTE}`,
-                  color: MUTE,
-                  fontFamily: "Calibri, Helvetica, sans-serif",
+                  padding: "10px 16px",
                   fontSize: 12,
-                  cursor: "pointer",
                   letterSpacing: 1,
                   textTransform: "uppercase",
                 }}
               >
                 Cancel
-              </button>
+              </TapButton>
             </div>
           )}
         </section>
@@ -724,16 +746,18 @@ export default function PrintTracker() {
         <footer
           style={{
             borderTop: `1px solid ${SAGE}`,
-            paddingTop: 20,
+            paddingTop: 18,
+            paddingBottom: 8,
             textAlign: "center",
           }}
         >
           <div
             style={{
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               fontStyle: "italic",
               color: FOREST,
               fontFamily: "Georgia, serif",
+              lineHeight: 1.5,
             }}
           >
             Every page you don't print{" "}
